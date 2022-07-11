@@ -1,0 +1,70 @@
+create keyspace Emp1 with replication={
+'class':'SimpleStrategy','replication_factor':1};
+use Emp1;
+create table emp_info( 
+empid int PRIMARY KEY, 
+empName text, 
+designation text, 
+date_of_joining timestamp, 
+deptName text, 
+salary int );
+
+BEGIN BATCH
+INSERT INTO emp_info(empid, empName, designation, date_of_joining, deptName, salary) VALUES(111, 'Anne', 'Manager', '2019-05-22', 'Sales', 100000)
+INSERT INTO emp_info(empid, empName, designation, date_of_joining, deptName, salary) VALUES(123, 'Ben', 'Tester', '2021-07-21', 'IT', 90000)
+INSERT INTO emp_info(empid, empName, designation, date_of_joining, deptName, salary) VALUES(121, 'Cate', 'Developer', '2021-11-19', 'IT', 110000)
+APPLY BATCH;
+
+select * from emp_info;
+empid | date_of_joining                 | deptname | designation | empname | salary
+-------+---------------------------------+----------+-------------+---------+--------
+   123 | 2021-07-20 18:30:00.000000+0000 |       IT |      Tester |     Ben |  90000
+   111 | 2019-05-21 18:30:00.000000+0000 |    Sales |     Manager |    Anne | 100000
+   121 | 2021-11-18 18:30:00.000000+0000 |       IT |   Developer |    Cate | 110000
+
+(3 rows)
+
+update emp_info set empName='David', deptName='HR' where empid=121;
+select * from emp_info;
+ empid | date_of_joining                 | deptname | designation | empname | salary
+-------+---------------------------------+----------+-------------+---------+--------
+   123 | 2021-07-20 18:30:00.000000+0000 |       IT |      Tester |     Ben |  90000
+   111 | 2019-05-21 18:30:00.000000+0000 |    Sales |     Manager |    Anne | 100000
+   121 | 2021-11-18 18:30:00.000000+0000 |       HR |   Developer |   David | 110000
+
+(3 rows)
+
+ALTER TABLE emp_info ADD Projects set<text>;
+select * from emp_info;
+empid | date_of_joining                 | deptname | designation | empname | projects | salary
+-------+---------------------------------+----------+-------------+---------+----------+--------
+   123 | 2021-07-20 18:30:00.000000+0000 |       IT |      Tester |     Ben |     null |  90000
+   111 | 2019-05-21 18:30:00.000000+0000 |    Sales |     Manager |    Anne |     null | 100000
+   121 | 2021-11-18 18:30:00.000000+0000 |       IT |   Developer |    Cate |     null | 110000
+
+(3 rows)
+
+UPDATE emp_info SET Projects={'Social Media Marketing'} WHERE empid=111;
+UPDATE emp_info SET Projects={'Security','IoT'} WHERE empid=121;
+UPDATE emp_info SET Projects={'Machine Learning'} WHERE empid=123;
+
+select * from emp_info;
+empid | date_of_joining                 | deptname | designation | empname | projects                   | salary
+-------+---------------------------------+----------+-------------+---------+----------------------------+--------
+   123 | 2021-07-20 18:30:00.000000+0000 |       IT |      Tester |     Ben |       {'Machine Learning'} |  90000
+   111 | 2019-05-21 18:30:00.000000+0000 |    Sales |     Manager |    Anne | {'Social Media Marketing'} | 100000
+   121 | 2021-11-18 18:30:00.000000+0000 |       IT |   Developer |    Cate |        {'IoT', 'Security'} | 110000
+
+(3 rows)
+
+BEGIN BATCH
+INSERT INTO emp_info(empid, empName, designation, date_Of_joining, deptName, Projects, salary) VALUES(124,'Joe','Intern','2022-03-20', 'IT', {'Security'}, 50000) USING TTL 15
+APPLY BATCH;
+
+select * from emp_info;
+empid | date_of_joining                 | deptname | designation | empname | projects                   | salary
+-------+---------------------------------+----------+-------------+---------+----------------------------+--------
+   123 | 2021-07-20 18:30:00.000000+0000 |       IT |      Tester |     Ben |       {'Machine Learning'} |  90000
+   111 | 2019-05-21 18:30:00.000000+0000 |    Sales |     Manager |    Anne | {'Social Media Marketing'} | 100000
+   121 | 2021-11-18 18:30:00.000000+0000 |       IT |   Developer |    Cate |        {'IoT', 'Security'} | 110000
+   124 | 2022-03-19 18:30:00.000000+0000 |       IT |      Intern |     Joe |               {'Security'} |  50000
